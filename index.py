@@ -175,7 +175,7 @@ class Controller:
                     node = self.nodes[node_index]
                     response = node.resolve_chains(all_chains)
                     result = {
-                        'resolve_request': counter if self.mining_mode == 'our_pow' else (counter % 5) + 1,
+                        'resolve_request': counter if self.mining_mode == 'our_pow' else int(counter / 5) + 1,
                         'hardness': self.hardness,
                         'node_index': node.thread_id,
                         'node_name': node.name,
@@ -184,7 +184,7 @@ class Controller:
                         'blockchain_length': len(node.blockchain.chain),
                         'is_pool': node.is_pool,
                         'number_of_nodes': node.number_of_nodes,
-                        'won': response['status']
+                        'won': not response['status']
                     }
                     winnings.append(result)
                     print(node.name, 'is_pool=' + str(node.is_pool), response['message'],
