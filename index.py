@@ -8,6 +8,7 @@ class Controller:
     def __init__(self):
         self.hardness = 5
         self.mining_mode = 'our_pow'
+        # self.mining_mode = ''
         self.nodes = []
         # normal nodes
         for i in range(0, 2):
@@ -52,6 +53,22 @@ class Controller:
         with open(f'results_mining_times_{self.mining_mode}.csv', 'w+') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=self.results_mining_times_fieldnames)
             writer.writeheader()
+        
+        self.winning_fieldnames = [
+            'resolve_request',
+            'hardness',
+            'node_index',
+            'node_name',
+            'node_counter',
+            'node_identifier',
+            'blockchain_length',
+            'is_pool',
+            'number_of_nodes',
+            'won'
+        ]
+        with open(f'winnings_{self.mining_mode}.csv', 'w+') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=self.winning_fieldnames)
+            writer.writeheader()
     
     def change_hardness(self, hardness):
         for i in range(len(self.nodes)):
@@ -71,6 +88,11 @@ class Controller:
     def record_mining_times(self, results):
         with open(f'results_mining_times_{self.mining_mode}.csv', 'a') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=self.results_mining_times_fieldnames)
+            writer.writerows(results)
+    
+    def record_winnings(self, results):
+        with open(f'winnings_{self.mining_mode}.csv', 'a') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=self.winning_fieldnames)
             writer.writerows(results)
     
     def run(self):
@@ -142,14 +164,32 @@ class Controller:
                 mining_times.append(result)
             self.record_mining_times(mining_times)
             
-            if counter % 5 == 0:
+            # if mining mode is our_pow, we resolve chains after each mine
+            # since not doing so will also prevent individual miners
+            # from mining
+            if self.mining_mode == 'our_pow' or counter % 5 == 0:
                 # resolve chains
                 all_chains = self.get_all_chains()
+                winnings = []
                 for node_index in range(len(self.nodes)):
                     node = self.nodes[node_index]
                     response = node.resolve_chains(all_chains)
+                    result = {
+                        'resolve_request': counter if self.mining_mode == 'our_pow' else (counter % 5) + 1,
+                        'hardness': self.hardness,
+                        'node_index': node.thread_id,
+                        'node_name': node.name,
+                        'node_counter': node.counter,
+                        'node_identifier': node.node_identifier,
+                        'blockchain_length': len(node.blockchain.chain),
+                        'is_pool': node.is_pool,
+                        'number_of_nodes': node.number_of_nodes,
+                        'won': response['status']
+                    }
+                    winnings.append(result)
                     print(node.name, 'is_pool=' + str(node.is_pool), response['message'],
                           'length=' + str(node.chain()['length']))
+                self.record_winnings(winnings)
             
             counter = counter + 1
         
