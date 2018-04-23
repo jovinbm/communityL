@@ -5,7 +5,7 @@ import queue
 
 
 class Node(threading.Thread):
-    def __init__(self, thread_id, name, counter, is_pool=False, number_of_nodes=1):
+    def __init__(self, thread_id, name, counter, is_pool=False, number_of_nodes=1, mining_mode=None):
         threading.Thread.__init__(self)
         self.thread_id = thread_id
         self.name = name,
@@ -14,8 +14,13 @@ class Node(threading.Thread):
         self.blockchain = Blockchain(thread_id)
         self.is_pool = is_pool
         self.number_of_nodes = number_of_nodes
+        self.mining_mode = mining_mode
     
     def mine(self, q=None, mine_lock=None):
+        if self.mining_mode == 'our_pow' and self.blockchain.chain[-1]['node_identifier'] == self.node_identifier:
+            # not allowed to mine
+            return
+        
         if q is None:
             q = queue.Queue()
         if mine_lock is None:
@@ -26,7 +31,7 @@ class Node(threading.Thread):
         proof = self.blockchain.proof_of_work(last_block)
         
         if mine_lock.acquire(blocking=True):
-            q.put(True)
+            q.put(None)
             if q.qsize() > 1:
                 # somebody else completed before us
                 mine_lock.release()
@@ -42,7 +47,7 @@ class Node(threading.Thread):
             
             # Forge the new Block by adding it to the chain
             previous_hash = self.blockchain.hash(last_block)
-            block = self.blockchain.new_block(proof, previous_hash)
+            block = self.blockchain.new_block(proof, previous_hash, node_identifier=self.node_identifier)
             
             response = {
                 'message': "New Block Forged",

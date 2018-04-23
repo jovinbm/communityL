@@ -9,6 +9,7 @@ import random
 class Blockchain:
     def __init__(self, blockchain_id):
         self.blockchain_id = blockchain_id
+        self.hardness = 4
         self.current_transactions = []
         self.chain = []
         self.nodes = set()
@@ -104,7 +105,7 @@ class Blockchain:
         
         return False
     
-    def new_block(self, proof, previous_hash):
+    def new_block(self, proof, previous_hash, node_identifier=None):
         """
         Create a new Block in the Blockchain
 
@@ -119,6 +120,7 @@ class Blockchain:
             'transactions': self.current_transactions,
             'proof': proof,
             'previous_hash': previous_hash or self.hash(self.chain[-1]),
+            'node_identifier': node_identifier
         }
         
         # Reset the current list of transactions
@@ -180,8 +182,7 @@ class Blockchain:
         
         return proof
     
-    @staticmethod
-    def valid_proof(last_proof, proof, last_hash):
+    def valid_proof(self, last_proof, proof, last_hash):
         """
         Validates the Proof
 
@@ -194,4 +195,9 @@ class Blockchain:
         
         guess = f'{last_proof}{proof}{last_hash}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
-        return guess_hash[:4] == "0000"
+        
+        hardness_string = ""
+        for i in range(0, self.hardness):
+            hardness_string += "0"
+        
+        return guess_hash[:self.hardness] == hardness_string
