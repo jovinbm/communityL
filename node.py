@@ -1,43 +1,66 @@
 from blockchain import Blockchain
 from uuid import uuid4
 import threading
-import time
+import queue
 
 
 class Node(threading.Thread):
-    def __init__(self, thread_id, name, counter):
+    def __init__(self, thread_id, name, counter, is_pool=False, number_of_nodes=1):
         threading.Thread.__init__(self)
         self.thread_id = thread_id
         self.name = name,
         self.counter = counter
         self.node_identifier = str(uuid4()).replace('-', '')
-        self.blockchain = Blockchain()
+        self.blockchain = Blockchain(thread_id)
+        self.is_pool = is_pool
+        self.number_of_nodes = number_of_nodes
     
-    def mine(self):
+    def mine(self, q=None, mine_lock=None):
+        if q is None:
+            q = queue.Queue()
+        if mine_lock is None:
+            mine_lock = threading.Lock()
+        
         # We run the proof of work algorithm to get the next proof...
         last_block = self.blockchain.last_block
         proof = self.blockchain.proof_of_work(last_block)
         
-        # We must receive a reward for finding the proof.
-        # The sender is "0" to signify that this node has mined a new coin.
-        self.blockchain.new_transaction(
-            sender="0",
-            recipient=self.node_identifier,
-            amount=1,
-        )
-        
-        # Forge the new Block by adding it to the chain
-        previous_hash = self.blockchain.hash(last_block)
-        block = self.blockchain.new_block(proof, previous_hash)
-        
-        response = {
-            'message': "New Block Forged",
-            'index': block['index'],
-            'transactions': block['transactions'],
-            'proof': block['proof'],
-            'previous_hash': block['previous_hash'],
-        }
-        return response
+        if mine_lock.acquire(blocking=True):
+            q.put(True)
+            if q.qsize() > 1:
+                # somebody else completed before us
+                mine_lock.release()
+                return None
+            
+            # We must receive a reward for finding the proof.
+            # The sender is "0" to signify that this node has mined a new coin.
+            self.blockchain.new_transaction(
+                sender="0",
+                recipient=self.node_identifier,
+                amount=1,
+            )
+            
+            # Forge the new Block by adding it to the chain
+            previous_hash = self.blockchain.hash(last_block)
+            block = self.blockchain.new_block(proof, previous_hash)
+            
+            response = {
+                'message': "New Block Forged",
+                'index': block['index'],
+                'transactions': block['transactions'],
+                'proof': block['proof'],
+                'previous_hash': block['previous_hash'],
+            }
+            mine_lock.release()
+            return response
+    
+    def minePool(self):
+        q = queue.Queue()
+        mine_lock = threading.Lock()
+        for node_index in range(self.number_of_nodes):
+            t = threading.Thread(target=self.mine, args=(q, mine_lock))
+            t.daemon = True
+            t.start()
     
     def new_transaction(self, values):
         # Check that the required fields are in the POST'ed data
@@ -90,6 +113,4 @@ class Node(threading.Thread):
         return response
     
     def run(self):
-        while True:
-            print('thread_run', self.thread_id, self.name, self.counter)
-            time.sleep(2)
+        self.mine()

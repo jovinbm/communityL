@@ -3,10 +3,12 @@ import json
 from time import time
 from urllib.parse import urlparse
 import copy
+import random
 
 
 class Blockchain:
-    def __init__(self):
+    def __init__(self, blockchain_id):
+        self.blockchain_id = blockchain_id
         self.current_transactions = []
         self.chain = []
         self.nodes = set()
@@ -43,9 +45,9 @@ class Blockchain:
         
         while current_index < len(chain):
             block = chain[current_index]
-            print(f'{last_block}')
-            print(f'{block}')
-            print("\n-----------\n")
+            # print(f'{last_block}')
+            # print(f'{block}')
+            # print("\n-----------\n")
             # Check that the hash of the block is correct
             if block['previous_hash'] != self.hash(last_block):
                 return False
@@ -68,22 +70,36 @@ class Blockchain:
         """
         
         new_chain = None
+        all_chains_lengths = set([len(chain) for chain in all_chains])
         
-        # We're only looking for chains longer than ours
-        max_length = len(self.chain)
-        
-        # Grab and verify the chains from all the nodes in our network
-        for chain in all_chains:
-            length = len(chain)
+        # if they are all of the same lengths, pick the first one that finished early
+        # to simulate propagation into the network
+        if len(all_chains_lengths) == 1:
+            min_time = all_chains[0]['chain'][-1]['timestamp']
+            min_time_index = 0
+            for i in range(len(all_chains)):
+                chain = all_chains[i]['chain']
+                if chain[-1]['timestamp'] < min_time:
+                    min_time = chain[-1]['timestamp']
+                    min_time_index = i
+            new_chain = all_chains[min_time_index]
+        else:
+            # We're only looking for chains longer than ours
+            max_length = len(self.chain)
             
-            # Check if the length is longer and the chain is valid
-            if length > max_length and self.valid_chain(chain):
-                max_length = length
-                new_chain = chain
+            # Grab and verify the chains from all the nodes in our network
+            for chain_obj in all_chains:
+                chain = chain_obj['chain']
+                length = len(chain)
+                
+                # Check if the length is longer and the chain is valid
+                if length > max_length and self.valid_chain(chain):
+                    max_length = length
+                    new_chain = chain_obj
         
         # Replace our chain if we discovered a new, valid chain longer than ours
-        if new_chain:
-            self.chain = copy.deepcopy(new_chain)
+        if new_chain and new_chain['blockchain_id'] != self.blockchain_id:
+            self.chain = copy.deepcopy(new_chain['chain'])
             return True
         
         return False
@@ -158,9 +174,9 @@ class Blockchain:
         last_proof = last_block['proof']
         last_hash = self.hash(last_block)
         
-        proof = 0
+        proof = random.randint(0, 2 ** 32)
         while self.valid_proof(last_proof, proof, last_hash) is False:
-            proof += 1
+            proof += random.randint(0, 2 ** 32)
         
         return proof
     
