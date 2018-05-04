@@ -2,6 +2,7 @@ from node import Node
 import threading
 import csv
 from time import time
+from random import shuffle
 
 
 def get_user_input_int(question_string, start_inclusive, end_inclusive, default):
@@ -169,14 +170,14 @@ class Controller:
                 mined = len(chain) > self.chain_length_reference[node.thread_id]
                 result = {
                     'mine_request': counter + 1,
-                    'mined': mined,
+                    'mined': 1 if mined else 0,
                     'hardness': self.hardness,
                     'node_index': node.thread_id,
                     'node_name': node.name,
                     'node_counter': node.counter,
                     'node_identifier': node.node_identifier,
                     'blockchain_length': len(node.blockchain.chain),
-                    'is_pool': node.is_pool,
+                    'is_pool': 1 if node.is_pool else 0,
                     'number_of_nodes': node.number_of_nodes,
                     'mining_time': '-' if not mined else mining_time
                 }
@@ -189,6 +190,7 @@ class Controller:
             if self.mining_mode == 'communityL' or counter % 5 == 0:
                 # resolve chains
                 all_chains = self.get_all_chains()
+                shuffle(all_chains)
                 winnings = []
                 for node_index in range(len(self.nodes)):
                     node = self.nodes[node_index]
@@ -201,9 +203,9 @@ class Controller:
                         'node_counter': node.counter,
                         'node_identifier': node.node_identifier,
                         'blockchain_length': len(node.blockchain.chain),
-                        'is_pool': node.is_pool,
+                        'is_pool': 1 if node.is_pool else 0,
                         'number_of_nodes': node.number_of_nodes,
-                        'won': not response['status']
+                        'won': 1 if not response['status'] else 0
                     }
                     winnings.append(result)
                     print(node.name, 'is_pool=' + str(node.is_pool), response['message'],

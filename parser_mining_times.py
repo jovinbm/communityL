@@ -21,7 +21,7 @@ def get_user_input_int(question_string, start_inclusive, end_inclusive, default)
 
 hardness = get_user_input_int('What hardness to extract data for? 1-4: ', 1, 4, -1)
 
-with open('results_mining_times_normal.csv') as f:
+with open('results_mining_times_communityL.csv') as f:
     reader = csv.DictReader(f)
     for row in reader:
         if int(row['hardness']) != hardness:
