@@ -17,7 +17,7 @@ class Node(threading.Thread):
         self.mining_mode = mining_mode
     
     def mine(self, q=None, mine_lock=None):
-        if self.mining_mode == 'our_pow' and self.blockchain.chain[-1]['node_identifier'] == self.node_identifier:
+        if self.mining_mode == 'communityL' and self.blockchain.chain[-1]['node_identifier'] == self.node_identifier:
             # not allowed to mine
             return
         

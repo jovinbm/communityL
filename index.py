@@ -7,7 +7,7 @@ from time import time
 class Controller:
     def __init__(self):
         self.hardness = 5
-        self.mining_mode = 'our_pow'
+        self.mining_mode = 'communityL'
         # self.mining_mode = ''
         self.nodes = []
         # normal nodes
@@ -164,10 +164,10 @@ class Controller:
                 mining_times.append(result)
             self.record_mining_times(mining_times)
             
-            # if mining mode is our_pow, we resolve chains after each mine
+            # if mining mode is communityL, we resolve chains after each mine
             # since not doing so will also prevent individual miners
             # from mining
-            if self.mining_mode == 'our_pow' or counter % 5 == 0:
+            if self.mining_mode == 'communityL' or counter % 5 == 0:
                 # resolve chains
                 all_chains = self.get_all_chains()
                 winnings = []
@@ -175,7 +175,7 @@ class Controller:
                     node = self.nodes[node_index]
                     response = node.resolve_chains(all_chains)
                     result = {
-                        'resolve_request': counter if self.mining_mode == 'our_pow' else int(counter / 5) + 1,
+                        'resolve_request': counter if self.mining_mode == 'communityL' else int(counter / 5) + 1,
                         'hardness': self.hardness,
                         'node_index': node.thread_id,
                         'node_name': node.name,
