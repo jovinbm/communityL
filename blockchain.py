@@ -71,7 +71,7 @@ class Blockchain:
         """
         
         new_chain = None
-        all_chains_lengths = set([len(chain) for chain in all_chains])
+        all_chains_lengths = set([len(c['chain']) for c in all_chains])
         
         # if they are all of the same lengths, pick the first one that finished early
         # to simulate propagation into the network

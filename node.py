@@ -18,8 +18,11 @@ class Node(threading.Thread):
     
     def mine(self, q=None, mine_lock=None):
         if self.mining_mode == 'communityL' and self.blockchain.chain[-1]['node_identifier'] == self.node_identifier:
+            print(self.thread_id, 'not mining')
             # not allowed to mine
             return
+        
+        print(self.thread_id, 'is mining')
         
         if q is None:
             q = queue.Queue()
@@ -57,6 +60,7 @@ class Node(threading.Thread):
                 'previous_hash': block['previous_hash'],
             }
             mine_lock.release()
+            print(self.thread_id, 'done mining', 'chain length=', len(self.blockchain.chain))
             return response
     
     def minePool(self):

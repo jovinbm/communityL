@@ -4,14 +4,37 @@ import csv
 from time import time
 
 
+def get_user_input_int(question_string, start_inclusive, end_inclusive, default):
+    try:
+        user_input = int(input(question_string))
+    except:
+        user_input = default
+    
+    if start_inclusive <= user_input <= end_inclusive:
+        return user_input
+    else:
+        return default
+
+
+def get_user_input_str(question_string, default):
+    try:
+        user_input = str(input(question_string))
+    except:
+        user_input = default
+    return user_input
+
+
 class Controller:
     def __init__(self):
-        self.hardness = 5
-        self.mining_mode = 'communityL'
-        # self.mining_mode = ''
+        self.hardness = get_user_input_int('Hardness to use? 1-5:', 1, 5, 4)
+        self.mining_mode = 'communityL' if get_user_input_int('Use communityL? 1=yes, 0=no(use normal):', 0, 1,
+                                                              1) == 1 else 'normal'
+        self.number_of_normal_nodes = get_user_input_int('How many normal nodes? 0-5:', 0, 5, 2)
+        self.number_of_mining_pools = get_user_input_int('How many mining pools? 0-5:', 0, 5, 1)
+        self.number_of_nodes_in_mining_pool = get_user_input_int('How many nodes in each mining pool? 0-5:', 0, 5, 2)
         self.nodes = []
         # normal nodes
-        for i in range(0, 2):
+        for i in range(0, self.number_of_normal_nodes):
             self.nodes.append(
                 Node(
                     thread_id=i,
@@ -22,14 +45,14 @@ class Controller:
             )
         
         # pool nodes
-        for i in range(2, 3):
+        for i in range(self.number_of_normal_nodes, self.number_of_normal_nodes + self.number_of_mining_pools):
             self.nodes.append(
                 Node(
                     thread_id=i,
                     name="Node-" + str(i),
                     counter=i,
                     is_pool=True,
-                    number_of_nodes=2,
+                    number_of_nodes=self.number_of_nodes_in_mining_pool,
                     mining_mode=self.mining_mode
                 )
             )
@@ -97,19 +120,15 @@ class Controller:
     
     def run(self):
         counter = 0
-        while not self.hardness < 2 and not counter > 500:
+        while not self.hardness < 1 and not counter > 10000:
             print('loop=', counter)
             now = time()
-            
-            if counter % 100 == 0:
-                self.hardness -= 1
-                self.change_hardness(self.hardness)
             
             for node_index in range(len(self.nodes)):
                 node = self.nodes[node_index]
                 self.chain_length_reference[node.thread_id] = len(node.chain()['chain'])
             
-            # add transactions to all
+            # add same transactions to all
             for node_index in range(len(self.nodes)):
                 node = self.nodes[node_index]
                 for i in range(3):
@@ -192,6 +211,9 @@ class Controller:
                 self.record_winnings(winnings)
             
             counter = counter + 1
+            if counter % 1000 == 0:
+                self.hardness -= 1
+                self.change_hardness(self.hardness)
         
         print('Done!')
 
