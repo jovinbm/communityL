@@ -5,6 +5,8 @@ from urllib.parse import urlparse
 import copy
 import random
 import multiprocessing
+import math
+import operator
 
 
 class Blockchain:
@@ -34,7 +36,7 @@ class Blockchain:
         else:
             raise ValueError('Invalid URL')
     
-    def valid_chain(self, chain):
+    def valid_chain(self, chain, mining_mode):
         """
         Determine if a given blockchain is valid
 
@@ -63,7 +65,7 @@ class Blockchain:
         
         return True
     
-    def resolve_conflicts(self, all_chains):
+    def resolve_conflicts(self, all_chains, mining_mode):
         """
         This is our consensus algorithm, it resolves conflicts
         by replacing our chain with the longest one in the network.
@@ -72,39 +74,115 @@ class Blockchain:
         """
         
         new_chain = None
-        all_chains_lengths = set([len(c['chain']) for c in all_chains])
-        
-        # if they are all of the same lengths, pick the first one that finished early
-        # to simulate propagation into the network
-        if len(all_chains_lengths) == 1:
-            min_time = all_chains[0]['chain'][-1]['timestamp']
-            min_time_index = 0
-            for i in range(len(all_chains)):
-                chain = all_chains[i]['chain']
-                if chain[-1]['timestamp'] < min_time:
+        # find the longest chains
+        longests = []
+        for i in range(len(all_chains)):
+            chain_obj = all_chains[i]
+            chain = chain_obj['chain']
+            length = len(chain)
+            if self.valid_chain(chain=chain, mining_mode=mining_mode):
+                longests.append({
+                    'length': length,
+                    'chain_obj': chain_obj
+                })
+        longests.sort(key=operator.itemgetter('length'))
+        longests.reverse()
+        max_length = longests[0]['length']
+        # remove all chains of lesser lengths
+        longests = [c for c in longests if c['length'] == max_length]
+        if len(longests) == 1:
+            # meaning there was one that was longer than the others
+            new_chain = longests[0]['chain_obj']
+        else:
+            # meaning there are multiple chains with the same max length
+            # resolve the one with the least timestamp
+            min_time = None
+            min_time_index = None
+            for i in range(len(longests)):
+                chain_obj = longests[i]['chain_obj']
+                chain = chain_obj['chain']
+                if chain[-1]['timestamp'] < (min_time if min_time is not None else math.inf):
                     min_time = chain[-1]['timestamp']
                     min_time_index = i
-            new_chain = all_chains[min_time_index]
-        else:
-            # We're only looking for chains longer than ours
-            max_length = len(self.chain)
-            
-            # Grab and verify the chains from all the nodes in our network
-            for chain_obj in all_chains:
-                chain = chain_obj['chain']
-                length = len(chain)
-                
-                # Check if the length is longer and the chain is valid
-                if length > max_length and self.valid_chain(chain):
-                    max_length = length
-                    new_chain = chain_obj
+            if min_time_index is not None:
+                new_chain = longests[min_time_index]['chain_obj']
+        
+        # new_chain = None
+        # all_chains_lengths = set([len(c['chain']) for c in all_chains])
+        #
+        # # if they are all of the same lengths, pick the first one that finished early
+        # # to simulate propagation into the network
+        # if len(all_chains_lengths) == 1:
+        #     min_time = None
+        #     min_time_index = None
+        #     for i in range(len(all_chains)):
+        #         chain = all_chains[i]['chain']
+        #         if self.valid_chain(chain=chain, mining_mode=mining_mode) and \
+        #             chain[-1]['timestamp'] < (min_time if min_time is not None else math.inf):
+        #             min_time = chain[-1]['timestamp']
+        #             min_time_index = i
+        #     if min_time_index is not None:
+        #         new_chain = all_chains[min_time_index]
+        # else:
+        #     # find the longest chains
+        #     longests = []
+        #     for i in range(len(all_chains)):
+        #         chain_obj = all_chains[i]
+        #         chain = chain_obj['chain']
+        #         length = len(chain)
+        #         if self.valid_chain(chain=chain, mining_mode=mining_mode):
+        #             longests.append({
+        #                 'length': length,
+        #                 'chain_obj': chain_obj
+        #             })
+        #     longests.sort(key=operator.itemgetter('length'))
+        #     longests.reverse()
+        #     max_length = longests[0]['length']
+        #     # remove all chains of lesser lengths
+        #     longests = [c for c in longests if c['length'] == max_length]
+        #     if len(longests) == 1:
+        #         # meaning there was one that was longer than the others
+        #         new_chain = longests[0]['chain_obj']
+        #     else:
+        #         # meaning there are multiple chains with the same max length
+        #         # resolve the one with the least timestamp
+        #         min_time = None
+        #         min_time_index = None
+        #         for i in range(len(longests)):
+        #             chain = longests[i]['chain']
+        #             if chain[-1]['timestamp'] < (min_time if min_time is not None else math.inf):
+        #                 min_time = chain[-1]['timestamp']
+        #                 min_time_index = i
+        #         if min_time_index is not None:
+        #             new_chain = all_chains[min_time_index]
+        #
+        #     # max_length = -math.inf
+        #     # min_time = math.inf
+        #     #
+        #     # # Grab and verify the chains from all the nodes in our network
+        #     # for i in range(len(all_chains)):
+        #     #     chain_obj = all_chains[i]
+        #     #     chain = chain_obj['chain']
+        #     #     length = len(chain)
+        #     #     longests.append({
+        #     #         'length': length,
+        #     #         'chain_obj': chain_obj
+        #     #     })
+        #     #
+        #     #     # Check if the length is longer and the chain is valid
+        #     #     if length >= max_length and \
+        #     #         chain[-1]['timestamp'] <= min_time and \
+        #     #         self.valid_chain(chain=chain, mining_mode=mining_mode):
+        #     #         max_length = length
+        #     #         min_time = chain[-1]['timestamp']
+        #     #         new_chain = chain_obj
         
         # Replace our chain if we discovered a new, valid chain longer than ours
         if new_chain and new_chain['blockchain_id'] != self.blockchain_id:
             self.chain = copy.deepcopy(new_chain['chain'])
             return True
-        
-        return False
+        else:
+            return False
     
     def new_block(self, proof, previous_hash, node_identifier=None, timestamp=time()):
         """

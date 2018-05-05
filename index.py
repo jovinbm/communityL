@@ -137,12 +137,12 @@ class Controller:
                 node = self.nodes[node_index]
                 if node.is_pool:
                     q = multiprocessing.Queue()
-                    p = multiprocessing.Process(target=node.minePool, args=(q))
+                    p = multiprocessing.Process(target=node.minePool, args=(q,))
                     p.start()
                     processes.append((node, p, q))
                 else:
                     q = multiprocessing.Queue()
-                    p = multiprocessing.Process(target=node.mineIndividual, args=(q))
+                    p = multiprocessing.Process(target=node.mineIndividual, args=(q,))
                     p.start()
                     processes.append((node, p, q))
             
@@ -150,9 +150,17 @@ class Controller:
             for (node, p, q) in processes:
                 p.join()
                 response = q.get()
-                # update this nodes chain since it was updated in another memory
-                node.blockchain.chain = response['chain']
-                node.blockchain.current_transactions = response['current_transactions']
+                q.close()
+                
+                if response is not None:
+                    # update this nodes chain since it was updated in another memory
+                    new_block_recipe = response['new_block_recipe']
+                    node.blockchain.new_block(
+                        proof=new_block_recipe['proof'],
+                        previous_hash=new_block_recipe['previous_hash'],
+                        node_identifier=new_block_recipe['node_identifier'],
+                        timestamp=new_block_recipe['timestamp']
+                    )
             
             # record mining times
             mining_times = []
@@ -187,7 +195,7 @@ class Controller:
                 shuffle(all_chains)
                 winnings = []
                 for node in self.nodes:
-                    response = node.resolve_chains(all_chains)
+                    response = node.resolve_chains(all_chains=all_chains)
                     result = {
                         'resolve_request': counter if self.mining_mode == 'communityL' else int(counter / 5) + 1,
                         'hardness': self.hardness,

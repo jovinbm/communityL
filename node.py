@@ -12,7 +12,13 @@ class Node():
         self.number_of_nodes = number_of_nodes
         self.mining_mode = mining_mode
     
-    def mineIndividual(self, q):
+    def mineIndividual(self, qr):
+        if self.mining_mode == 'communityL' and self.blockchain.chain[-1]['node_identifier'] == self.node_identifier:
+            # not allowed to mine
+            print(self.node_id, 'not mining')
+            qr.put(None)
+            return
+        
         print(self.node_id, 'is mining')
         
         # We run the proof of work algorithm to get the next proof...
@@ -22,6 +28,7 @@ class Node():
         # wait to finish ang get value
         p.join()
         work = q.get()
+        q.close()
         
         # create block
         # We must receive a reward for finding the proof.
@@ -34,26 +41,25 @@ class Node():
         
         # Forge the new Block by adding it to the chain
         previous_hash = self.blockchain.hash(last_block)
-        block = self.blockchain.new_block(
-            proof=work['proof'],
-            previous_hash=previous_hash,
-            node_identifier=self.node_identifier,
-            timestamp=work['timestamp']
-        )
-        
         response = {
             'message': "New Block Forged",
-            'index': block['index'],
-            'transactions': block['transactions'],
-            'proof': block['proof'],
-            'previous_hash': block['previous_hash'],
-            'chain': self.blockchain.chain,
-            'current_transactions': self.blockchain.current_transactions,
+            'new_block_recipe': {
+                'proof': work['proof'],
+                'previous_hash': previous_hash,
+                'node_identifier': self.node_identifier,
+                'timestamp': work['timestamp'],
+            }
         }
-        q.put(response)
-        print(self.node_id, 'done mining', 'chain length=', len(self.blockchain.chain))
+        qr.put(response)
+        print(self.node_id, 'done mining', 'chain length=', len(self.blockchain.chain) + 1)
     
-    def minePool(self, q):
+    def minePool(self, qr):
+        if self.mining_mode == 'communityL' and self.blockchain.chain[-1]['node_identifier'] == self.node_identifier:
+            # not allowed to mine
+            print(self.node_id, 'not mining')
+            qr.put(None)
+            return
+        
         print(self.node_id, 'is mining')
         
         last_block = self.blockchain.last_block
@@ -68,6 +74,7 @@ class Node():
         for (p, q) in processes:
             p.join()
             work = q.get()
+            q.close()
             works.append(work)
         
         works.sort(key=operator.itemgetter('timestamp'))
@@ -84,24 +91,17 @@ class Node():
         
         # Forge the new Block by adding it to the chain
         previous_hash = self.blockchain.hash(last_block)
-        block = self.blockchain.new_block(
-            proof=work['proof'],
-            previous_hash=previous_hash,
-            node_identifier=self.node_identifier,
-            timestamp=work['timestamp']
-        )
-        
         response = {
             'message': "New Block Forged",
-            'index': block['index'],
-            'transactions': block['transactions'],
-            'proof': block['proof'],
-            'previous_hash': block['previous_hash'],
-            'chain': self.blockchain.chain,
-            'current_transactions': self.blockchain.current_transactions,
+            'new_block_recipe': {
+                'proof': work['proof'],
+                'previous_hash': previous_hash,
+                'node_identifier': self.node_identifier,
+                'timestamp': work['timestamp'],
+            }
         }
-        q.put(response)
-        print(self.node_id, 'done mining', 'chain length=', len(self.blockchain.chain))
+        qr.put(response)
+        print(self.node_id, 'done mining', 'chain length=', len(self.blockchain.chain) + 1)
     
     def new_transaction(self, values):
         # Check that the required fields are in the POST'ed data
@@ -129,7 +129,7 @@ class Node():
         return response
     
     def resolve_chains(self, all_chains):
-        replaced = self.blockchain.resolve_conflicts(all_chains)
+        replaced = self.blockchain.resolve_conflicts(all_chains, mining_mode=self.mining_mode)
         
         if replaced:
             response = {
