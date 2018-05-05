@@ -1,8 +1,8 @@
 from node import Node
-import threading
 import csv
 from time import time
 from random import shuffle
+import multiprocessing
 
 
 def get_user_input_int(question_string, start_inclusive, end_inclusive, default):
@@ -38,9 +38,7 @@ class Controller:
         for i in range(0, self.number_of_normal_nodes):
             self.nodes.append(
                 Node(
-                    thread_id=i,
-                    name="Node-" + str(i),
-                    counter=i,
+                    node_id=i,
                     mining_mode=self.mining_mode
                 )
             )
@@ -49,9 +47,7 @@ class Controller:
         for i in range(self.number_of_normal_nodes, self.number_of_normal_nodes + self.number_of_mining_pools):
             self.nodes.append(
                 Node(
-                    thread_id=i,
-                    name="Node-" + str(i),
-                    counter=i,
+                    node_id=i,
                     is_pool=True,
                     number_of_nodes=self.number_of_nodes_in_mining_pool,
                     mining_mode=self.mining_mode
@@ -65,9 +61,7 @@ class Controller:
             'mine_request',
             'mined',
             'hardness',
-            'node_index',
-            'node_name',
-            'node_counter',
+            'node_id',
             'node_identifier',
             'blockchain_length',
             'is_pool',
@@ -81,9 +75,7 @@ class Controller:
         self.winning_fieldnames = [
             'resolve_request',
             'hardness',
-            'node_index',
-            'node_name',
-            'node_counter',
+            'node_id',
             'node_identifier',
             'blockchain_length',
             'is_pool',
@@ -101,11 +93,10 @@ class Controller:
     
     def get_all_chains(self):
         chains = []
-        for i in range(len(self.nodes)):
-            node = self.nodes[i]
+        for node in self.nodes:
             chains.append({
-                'blockchain_id': node.thread_id,
-                'chain': node.chain()['chain']
+                'blockchain_id': node.node_id,
+                'chain': node.blockchain.chain
             })
         return chains
     
@@ -125,13 +116,11 @@ class Controller:
             print('loop=', counter)
             now = time()
             
-            for node_index in range(len(self.nodes)):
-                node = self.nodes[node_index]
-                self.chain_length_reference[node.thread_id] = len(node.chain()['chain'])
+            for node in self.nodes:
+                self.chain_length_reference[node.node_id] = len(node.blockchain.chain)
             
             # add same transactions to all
-            for node_index in range(len(self.nodes)):
-                node = self.nodes[node_index]
+            for node in self.nodes:
                 for i in range(3):
                     node.new_transaction({
                         "sender": "d4ee26eee15148ee92c6cd394edd974e",
@@ -140,41 +129,46 @@ class Controller:
                     })
             
             # mine on all nodes
-            threads = []
-            for node_index in range(len(self.nodes)):
+            # shuffle for randomness on which one starts
+            node_indexes = [i for i in range(len(self.nodes))]
+            shuffle(node_indexes)
+            processes = []
+            for node_index in node_indexes:
                 node = self.nodes[node_index]
                 if node.is_pool:
-                    t = threading.Thread(target=node.minePool, args=())
-                    t.daemon = True
-                    t.start()
-                    threads.append(t)
+                    q = multiprocessing.Queue()
+                    p = multiprocessing.Process(target=node.minePool, args=(q))
+                    p.start()
+                    processes.append((node, p, q))
                 else:
-                    t = threading.Thread(target=node.mine, args=())
-                    t.daemon = True
-                    t.start()
-                    threads.append(t)
+                    q = multiprocessing.Queue()
+                    p = multiprocessing.Process(target=node.mineIndividual, args=(q))
+                    p.start()
+                    processes.append((node, p, q))
             
-            for thread_index in range(len(threads)):
-                threads[thread_index].join()
+            # wait for all to finish
+            for (node, p, q) in processes:
+                p.join()
+                response = q.get()
+                # update this nodes chain since it was updated in another memory
+                node.blockchain.chain = response['chain']
+                node.blockchain.current_transactions = response['current_transactions']
             
             # record mining times
             mining_times = []
-            for node_index in range(len(self.nodes)):
-                node = self.nodes[node_index]
-                chain = node.chain()['chain']
+            for node in self.nodes:
+                chain = node.blockchain.chain
                 mining_time = None
                 if len(chain) < 2:
                     mining_time = chain[-1]['timestamp'] - now
                 else:
                     mining_time = chain[-1]['timestamp'] - chain[-2]['timestamp']
-                mined = len(chain) > self.chain_length_reference[node.thread_id]
+                mined = len(chain) > self.chain_length_reference[node.node_id]
                 result = {
                     'mine_request': counter + 1,
                     'mined': 1 if mined else 0,
                     'hardness': self.hardness,
-                    'node_index': node.thread_id,
-                    'node_name': node.name,
-                    'node_counter': node.counter,
+                    'node_id': node.node_id,
                     'node_identifier': node.node_identifier,
                     'blockchain_length': len(node.blockchain.chain),
                     'is_pool': 1 if node.is_pool else 0,
@@ -192,15 +186,12 @@ class Controller:
                 all_chains = self.get_all_chains()
                 shuffle(all_chains)
                 winnings = []
-                for node_index in range(len(self.nodes)):
-                    node = self.nodes[node_index]
+                for node in self.nodes:
                     response = node.resolve_chains(all_chains)
                     result = {
                         'resolve_request': counter if self.mining_mode == 'communityL' else int(counter / 5) + 1,
                         'hardness': self.hardness,
-                        'node_index': node.thread_id,
-                        'node_name': node.name,
-                        'node_counter': node.counter,
+                        'node_id': node.node_id,
                         'node_identifier': node.node_identifier,
                         'blockchain_length': len(node.blockchain.chain),
                         'is_pool': 1 if node.is_pool else 0,
@@ -208,8 +199,8 @@ class Controller:
                         'won': 1 if not response['status'] else 0
                     }
                     winnings.append(result)
-                    print(node.name, 'is_pool=' + str(node.is_pool), response['message'],
-                          'length=' + str(node.chain()['length']))
+                    print(node.node_id, 'is_pool=' + str(node.is_pool), response['message'],
+                          'length=' + str(len(node.blockchain.chain)))
                 self.record_winnings(winnings)
             
             counter = counter + 1

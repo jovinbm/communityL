@@ -4,6 +4,7 @@ from time import time
 from urllib.parse import urlparse
 import copy
 import random
+import multiprocessing
 
 
 class Blockchain:
@@ -105,7 +106,7 @@ class Blockchain:
         
         return False
     
-    def new_block(self, proof, previous_hash, node_identifier=None):
+    def new_block(self, proof, previous_hash, node_identifier=None, timestamp=time()):
         """
         Create a new Block in the Blockchain
 
@@ -116,7 +117,7 @@ class Blockchain:
         
         block = {
             'index': len(self.chain) + 1,
-            'timestamp': time(),
+            'timestamp': timestamp,
             'transactions': self.current_transactions,
             'proof': proof,
             'previous_hash': previous_hash or self.hash(self.chain[-1]),
@@ -162,7 +163,7 @@ class Blockchain:
         block_string = json.dumps(block, sort_keys=True).encode()
         return hashlib.sha256(block_string).hexdigest()
     
-    def proof_of_work(self, last_block):
+    def _proof_of_work(self, last_block, q):
         """
         Simple Proof of Work Algorithm:
 
@@ -180,7 +181,17 @@ class Blockchain:
         while self.valid_proof(last_proof, proof, last_hash) is False:
             proof += random.randint(0, 2 ** 32)
         
-        return proof
+        q.put({
+            'proof': proof,
+            'timestamp': time()
+        })
+    
+    def proof_of_work(self, last_block):
+        q = multiprocessing.Queue()
+        p = multiprocessing.Process(target=self._proof_of_work, args=(last_block, q))
+        p.daemon = True
+        p.start()
+        return (p, q)
     
     def valid_proof(self, last_proof, proof, last_hash):
         """
