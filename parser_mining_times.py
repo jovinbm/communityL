@@ -19,7 +19,7 @@ def get_user_input_int(question_string, start_inclusive, end_inclusive, default)
         return default
 
 
-hardness = get_user_input_int('What hardness to extract data for? 1-4: ', 1, 4, -1)
+hardness = get_user_input_int('What hardness to extract data for? 1-5: ', 1, 5, -1)
 
 with open('results_mining_times_communityL.csv') as f:
     reader = csv.DictReader(f)
@@ -28,14 +28,14 @@ with open('results_mining_times_communityL.csv') as f:
             continue
         
         if row['mining_time'] == '-':
-            if int(row['node_index']) == 0:
+            if int(row['node_id']) == 0:
                 not_mined_node0 += 1
-            if int(row['node_index']) == 1:
+            if int(row['node_id']) == 1:
                 not_mined_node1 += 1
-            if int(row['node_index']) == 2:
+            if int(row['node_id']) == 2:
                 not_mined_node2 += 1
         else:
-            if int(row['node_index']) == 2:
+            if int(row['node_id']) == 2:
                 mining_times_pools.append(float(row['mining_time']))
             else:
                 mining_times_individual_nodes.append(float(row['mining_time']))

@@ -1,96 +1,118 @@
 # MINING TIMES
 
 # normal consensus algorithm
+What hardness to extract data for? 1-5: 5
+Number of times node 0 did not mine:  0
+Number of times node 1 did not mine:  0
+Number of times node 2 (pool) did not mine:  0
+Average mining times for individual nodes:  1.0263615571260452
+Average mining times for pools:  0.9659516797065735
+
 What hardness to extract data for? 1-4: 4
 Number of times node 0 did not mine:  0
 Number of times node 1 did not mine:  0
-Number of times node 2 (pool) did not mine:  106
-Average mining times for individual nodes:  2.2398409593105315
-Average mining times for pools:  2.0171375111978858
+Number of times node 2 (pool) did not mine:  0
+Average mining times for individual nodes:  1.0245518062114716
+Average mining times for pools:  0.9696265277862549
 
 What hardness to extract data for? 1-4: 3
 Number of times node 0 did not mine:  0
 Number of times node 1 did not mine:  0
-Number of times node 2 (pool) did not mine:  22
-Average mining times for individual nodes:  0.1529576621055603
-Average mining times for pools:  0.15488722768054175
+Number of times node 2 (pool) did not mine:  0
+Average mining times for individual nodes:  0.2165143359899521
+Average mining times for pools:  0.21349067068099975
 
 What hardness to extract data for? 1-4: 2
 Number of times node 0 did not mine:  0
 Number of times node 1 did not mine:  0
 Number of times node 2 (pool) did not mine:  0
-Average mining times for individual nodes:  0.04881769192218781
-Average mining times for pools:  0.0493209810256958
+Average mining times for individual nodes:  0.2173811398744583
+Average mining times for pools:  0.2172660675048828
 
 What hardness to extract data for? 1-4: 1
 Number of times node 0 did not mine:  0
 Number of times node 1 did not mine:  0
 Number of times node 2 (pool) did not mine:  0
-Average mining times for individual nodes:  0.05711188423633575
-Average mining times for pools:  0.05722638463973999
+Average mining times for individual nodes:  0.26030229902267454
+Average mining times for pools:  0.2602265954017639
 
 #communityL consensus algorithm
-What hardness to extract data for? 1-4: 4
-Number of times node 0 did not mine:  500
-Number of times node 1 did not mine:  499
-Number of times node 2 (pool) did not mine:  631
-Average mining times for individual nodes:  1.0420247274678904
-Average mining times for pools:  0.5750206653987812
+What hardness to extract data for? 1-5: 5
+Number of times node 0 did not mine:  267
+Number of times node 1 did not mine:  284
+Number of times node 2 (pool) did not mine:  448
+Average mining times for individual nodes:  1.1503034426147483
+Average mining times for pools:  0.7550951039445573
 
-What hardness to extract data for? 1-4: 3
-Number of times node 0 did not mine:  500
-Number of times node 1 did not mine:  500
-Number of times node 2 (pool) did not mine:  505
-Average mining times for individual nodes:  0.22750176239013672
-Average mining times for pools:  0.2977613444280143
+What hardness to extract data for? 1-5: 4
+Number of times node 0 did not mine:  277
+Number of times node 1 did not mine:  287
+Number of times node 2 (pool) did not mine:  436
+Average mining times for individual nodes:  1.4484012352722933
+Average mining times for pools:  1.0466209269584494
 
-What hardness to extract data for? 1-4: 2
-Number of times node 0 did not mine:  500
-Number of times node 1 did not mine:  500
-Number of times node 2 (pool) did not mine:  500
-Average mining times for individual nodes:  0.3299286224842072
-Average mining times for pools:  0.43822743034362793
+What hardness to extract data for? 1-5: 3
+Number of times node 0 did not mine:  288
+Number of times node 1 did not mine:  290
+Number of times node 2 (pool) did not mine:  422
+Average mining times for individual nodes:  0.8972981683647918
+Average mining times for pools:  0.8726966818311223
 
-What hardness to extract data for? 1-4: 1
-Number of times node 0 did not mine:  500
-Number of times node 1 did not mine:  500
-Number of times node 2 (pool) did not mine:  500
-Average mining times for individual nodes:  0.4567218108177185
-Average mining times for pools:  0.6054995770454407
+What hardness to extract data for? 1-5: 2
+Number of times node 0 did not mine:  326
+Number of times node 1 did not mine:  329
+Number of times node 2 (pool) did not mine:  345
+Average mining times for individual nodes:  1.1353067497338505
+Average mining times for pools:  1.1363937498048973
+
+What hardness to extract data for? 1-5: 1
+Number of times node 0 did not mine:  337
+Number of times node 1 did not mine:  350
+Number of times node 2 (pool) did not mine:  313
+Average mining times for individual nodes:  1.454431716122885
+Average mining times for pools:  1.4545827567837644
 
 
 # WINNINGS
 
 # normal consensus algorithm
-What hardness to extract data for? 1-4: 4
-Number of wins individual nodes:  118
-Number of wins pools:  112
+What hardness to extract data for? 1-5: 5
+Number of wins individual nodes:  67
+Number of wins pools:  133
 
-What hardness to extract data for? 1-4: 3
-Number of wins individual nodes:  193
-Number of wins pools:  7
+What hardness to extract data for? 1-5: 4
+Number of wins individual nodes:  72
+Number of wins pools:  128
 
-What hardness to extract data for? 1-4: 2
-Number of wins individual nodes:  200
-Number of wins pools:  0
+What hardness to extract data for? 1-5: 3
+Number of wins individual nodes:  78
+Number of wins pools:  122
 
-What hardness to extract data for? 1-4: 1
-Number of wins individual nodes:  200
-Number of wins pools:  0
+What hardness to extract data for? 1-5: 2
+Number of wins individual nodes:  126
+Number of wins pools:  74
+
+What hardness to extract data for? 1-5: 1
+Number of wins individual nodes:  137
+Number of wins pools:  63
 
 #communityL consensus algorithm
-What hardness to extract data for? 1-4: 4
-Number of wins individual nodes:  999
-Number of wins pools:  486
+What hardness to extract data for? 1-5: 5
+Number of wins individual nodes:  552
+Number of wins pools:  448
 
-What hardness to extract data for? 1-4: 3
-Number of wins individual nodes:  1000
-Number of wins pools:  500
+What hardness to extract data for? 1-5: 4
+Number of wins individual nodes:  563
+Number of wins pools:  437
 
-What hardness to extract data for? 1-4: 2
-Number of wins individual nodes:  1000
-Number of wins pools:  500
+What hardness to extract data for? 1-5: 3
+Number of wins individual nodes:  578
+Number of wins pools:  422
 
-What hardness to extract data for? 1-4: 1
-Number of wins individual nodes:  1000
-Number of wins pools:  500
+What hardness to extract data for? 1-5: 2
+Number of wins individual nodes:  656
+Number of wins pools:  344
+
+What hardness to extract data for? 1-5: 1
+Number of wins individual nodes:  687
+Number of wins pools:  313
